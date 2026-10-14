@@ -1470,6 +1470,7 @@ void write_title(struct SYMBOL *s)
 	p = &s->text[2];
 	if (*p == '\0')
 		return;
+	anno_begin();
 	if (s == info['T' - 'A']) {
 		sz = cfmt.font_tb[TITLEFONT].size;
 		bskip(cfmt.titlespace + sz);
@@ -1491,6 +1492,7 @@ void write_title(struct SYMBOL *s)
 	a2b(" %.1f M ", sz * 0.2);
 	p = trim_title(p, s);
 	put_str(p, cfmt.titleleft ? A_LEFT : A_CENTER);
+	anno_text(s, s == info['T' - 'A'] ? "title" : "subtitle");
 }
 
 /* -- write heading with format -- */
@@ -1771,8 +1773,10 @@ void write_heading(void)
 			for (;;) {
 				bskip(cfmt.font_tb[COMPOSERFONT].size);
 				down2 += cfmt.font_tb[COMPOSERFONT].size;
+				anno_begin();
 				a2b("0 0 M ");
 				put_inf(author);
+				anno_text(author, "author");
 				if ((author = author->next) == NULL)
 					break;
 			}
@@ -1784,10 +1788,12 @@ void write_heading(void)
 			s = composer;
 			for (;;) {
 				bskip(cfmt.font_tb[COMPOSERFONT].size);
+				anno_begin();
 				a2b("%.1f 0 M ", xcomp);
 				put_inf2r(s,
 					  (!s || !s->next) ? origin : NULL,
 					  align);
+				anno_text(s ? s : origin, s ? "composer" : "origin");
 				if (!s)
 					break;
 				if ((s = s->next) == NULL)

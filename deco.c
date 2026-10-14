@@ -2188,6 +2188,7 @@ static void draw_gchord(struct SYMBOL *s,
 			y = yav + gch->y;
 			break;
 		}
+		anno_begin();
 		putxy(x, (y  + h * 0.2) *		/* (descent) */
 				staff_tb[s->staff].staffscale);
 		a2b("yns%d M ", s->staff);
@@ -2201,6 +2202,12 @@ static void draw_gchord(struct SYMBOL *s,
 				a2b(" boxmark");
 		}
 		a2b("\n");
+		anno_text(s, gch->type == 'g' ? "chord_symbol" :
+			gch->type == '^' ? "annotation_above" :
+			gch->type == '_' ? "annotation_below" :
+			gch->type == '<' ? "annotation_left" :
+			gch->type == '>' ? "annotation_right" :
+				"annotation_free");
 	}
 
 	/* draw the box around the guitar chords */
@@ -2549,10 +2556,12 @@ float draw_partempo(int staff, float top)
 				continue;
 
 			/*fixme: cf left shift (-5)*/
+			anno_begin();
 			a2b("%.1f %.1f M ", s->x - 5,
 					(dosh & 1) ? h : y);
 			dosh >>= 1;
 			write_tempo(g, beat, 1);
+			anno_text(g, "tempo");
 		}
 	}
 
@@ -2596,6 +2605,7 @@ float draw_partempo(int staff, float top)
 		if (!g)
 			continue;
 //		w = tex_str(&g->text[2]);
+		anno_begin();
 		a2b("%.1f %.1f M", s->x - 10, 2 - ht - h);
 		tex_str(&g->text[2]);
 		str_out(tex_buf, A_LEFT);
@@ -2606,6 +2616,7 @@ float draw_partempo(int staff, float top)
 //				s->x - 10 - 2, 2 - ht - h - 4,
 //				w + 4, h);
 		a2b("\n");
+		anno_text(g, "part_label");
 	}
 out:
 	return dy;

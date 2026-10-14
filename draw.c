@@ -105,6 +105,19 @@ void anno_begin(void)
 	a2b("%%A (\n");
 }
 
+/* annotation (-A) for a text (title, composer, tempo, annotation...):
+ * type 'T', the source place of the symbol (0 0 if none), an empty box
+ * (the box comes from the drawing) and the kind of text after '|' */
+void anno_text(struct SYMBOL *s, char *name)
+{
+	if (!annotate)
+		return;
+	if (mbf[-1] != '\n')
+		*mbf++ = '\n';
+	a2b("%%A T %d %d 0 0 0 0 |%s\n",
+		s ? s->linenum : 0, s ? s->colnum : 0, name);
+}
+
 /* annotation (-A) for a system element that comes from no ABC symbol
  * (brace, bracket, line at the start of the system): type 'S',
  * row and column 0, box from (x, y) with width w and height h,
@@ -4318,9 +4331,11 @@ static void draw_vname(float indent)
 	struct {
 		int nl;
 		char *v[8];
+		char sh[8];		/* 1 if short name (snm) */
 	} staff_d[MAXSTAFF], *staff_p;
 	char *p, *q;
 	float y;
+	int short_name;
 
 	for (staff = cursys->nstaff; staff >= 0; staff--) {
 		if (!cursys->staff[staff].empty)
@@ -4340,8 +4355,10 @@ static void draw_vname(float indent)
 		if (p_voice->new_name) {
 			p_voice->new_name = 0;
 			p = p_voice->nm;
+			short_name = 0;
 		} else {
 			p = p_voice->snm;
+			short_name = 1;
 		}
 		if (!p)
 			continue;
@@ -4354,6 +4371,8 @@ static void draw_vname(float indent)
 		}
 		staff_p = &staff_d[staff];
 		for (;;) {
+			if (staff_p->nl < 8)
+				staff_p->sh[staff_p->nl] = short_name;
 			staff_p->v[staff_p->nl++] = p;
 			p = strstr(p, "\\n");
 			if (!p
@@ -4391,8 +4410,11 @@ static void draw_vname(float indent)
 			q = strstr(p, "\\n");
 			if (q)
 				*q = '\0';
+			anno_begin();
 			a2b("%.1f %.1f M ", indent, y);
 			put_str(p, A_CENTER);
+			anno_text(NULL, n < 8 && staff_p->sh[n] ?
+				"instrument_short_name" : "instrument_name");
 			y -= 18.;
 			if (q)
 				*q = '\\';

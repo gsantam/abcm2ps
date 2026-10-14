@@ -4458,6 +4458,16 @@ void svg_write(char *buf, int len)
 
 				q += 2;
 				type = *q++;
+
+				/* finish what is being drawn (a pending path,
+				 * an open text) so that it stays on its side
+				 * of the annotation */
+				if (path)
+					path_end();
+				if (g == 2) {
+					fputs("</text>\n", fout);
+					g = 1;
+				}
 				if (type == '(') {	/* start of a symbol drawing */
 					fprintf(fout, "<abcbegin/>\n");
 					break;
