@@ -94,6 +94,17 @@ static void anno_out(struct SYMBOL *s, char type)
 	a2b("\n");
 }
 
+/* mark the start of a symbol drawing (-A): the drawing up to the next
+ * annotation belongs to that annotation (SVG: <abcbegin/>) */
+void anno_begin(void)
+{
+	if (!annotate)
+		return;
+	if (mbf[-1] != '\n')
+		*mbf++ = '\n';
+	a2b("%%A (\n");
+}
+
 /* -- up/down shift needed to get k*6 -- */
 static float rnd6(float y)
 {
@@ -1431,14 +1442,16 @@ static void draw_gracenotes(struct SYMBOL *s)
 		if (g->type != NOTEREST)
 			continue;
 		if ((g->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_ST) {
-			if (annotate)
-				anno_out(g, 'b');
+			anno_begin();
 			if (calculate_beam(&bm, g))
 				draw_beams(&bm);
+			if (annotate)
+				anno_out(g, 'b');
 		}
+		anno_begin();
 		draw_note(g->x, g, bm.s2 == NULL);
 		if (annotate)
-			anno_out(s, 'g');
+			anno_out(g, 'g');
 		if (g == bm.s2)
 			bm.s2 = NULL;			/* (draw flags again) */
 
@@ -4624,6 +4637,7 @@ float draw_systems(float indent)
 				s->flags |= ABC_F_INVIS;
 			if (s->flags & ABC_F_INVIS)
 				break;
+			anno_begin();
 			draw_bar(s, bar_bot[staff], bar_height[staff]);
 			if (annotate)
 				anno_out(s, 'B');
@@ -4763,11 +4777,13 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				 || (first_note && !(s->sflags & S_BEAM_ST))) {
 					first_note = 0;
 					if (calculate_beam(&bm, s)) {
+						anno_begin();
+						draw_beams(&bm);
 						if (annotate)
 							anno_out(s, 'b');
-						draw_beams(&bm);
 					}
 				}
+				anno_begin();
 				draw_note(x, s, bm.s2 == NULL);
 				if (annotate)
 					anno_out(s, 'N');
@@ -4779,6 +4795,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 					anno_out(s, 'e');
 				break;
 			}
+			anno_begin();
 			draw_rest(s);
 			if (annotate)
 				anno_out(s, 'R');
@@ -4795,6 +4812,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 			set_color(0);
 			set_sscale(staff);
+			anno_begin();
 			y = staff_tb[staff].y;
 			x -= 10;		/* clef shift - see set_width() */
 			putxy(x, y + s->y);
@@ -4827,6 +4845,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 			set_color(0);
 			set_sscale(s->staff);
+			anno_begin();
 			draw_timesig(x, s);
 			if (annotate)
 				anno_out(s, 'M');
@@ -4840,12 +4859,14 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 			set_color(0);
 			set_sscale(s->staff);
+			anno_begin();
 			draw_keysig(p_voice, x, s);
 			if (annotate)
 				anno_out(s, 'K');
 			break;
 		case MREST:
 			set_scale(s);
+			anno_begin();
 			putxy(x, staff_tb[s->staff].y + 12);
 			a2b("mrest(%d)/Times-Bold 15 selectfont ",
 				s->u.bar.len);

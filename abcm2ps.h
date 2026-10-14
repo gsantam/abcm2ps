@@ -581,7 +581,8 @@ extern int defl;		/* decoration flags */
 		/* switches modified by flags: */
 extern int quiet;		/* quiet mode */
 extern int secure;		/* secure mode */
-extern int annotate;		/* output source references */
+extern int annotate;
+void anno_begin(void);	/* draw.c: start of a symbol drawing (-A) */		/* output source references */
 extern int pagenumbers; 	/* write page numbers */
 extern int epsf;		/* 1: EPSF, 2: SVG, 3: embedded ABC */
 extern int svg;			/* 1: SVG, 2: XHTML */

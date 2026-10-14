@@ -4458,6 +4458,10 @@ void svg_write(char *buf, int len)
 
 				q += 2;
 				type = *q++;
+				if (type == '(') {	/* start of a symbol drawing */
+					fprintf(fout, "<abcbegin/>\n");
+					break;
+				}
 				if (type != 'b' && type != 'e') {	/* if not beam */
 					sscanf((char *) q + 1, "%d %d %f %f %f %d",
 						&row, &col, &x, &y, &w, &h);
@@ -4472,9 +4476,21 @@ void svg_write(char *buf, int len)
 				/* what was drawn (after '|', see anno_out) */
 				info = memchr(q, '|', (char *) p - (char *) q);
 				if (info) {
-					info++;
-					fprintf(fout, " info=\"%.*s\"",
-						(int) ((char *) p - info - 1), info);
+					char *e = (char *) p - 1;	/* '\n' */
+
+					/* escape the XML special characters
+					 * (decoration names like "<)") */
+					fprintf(fout, " info=\"");
+					while (++info < e) {
+						switch (*info) {
+						case '<': fputs("&lt;", fout); break;
+						case '>': fputs("&gt;", fout); break;
+						case '&': fputs("&amp;", fout); break;
+						case '"': fputs("&quot;", fout); break;
+						default: fputc(*info, fout); break;
+						}
+					}
+					fputc('"', fout);
 				}
 				fprintf(fout, "/>\n");
 				break;

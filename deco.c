@@ -1333,6 +1333,36 @@ float deco_width(struct SYMBOL *s)
 
 /* -- draw the decorations -- */
 /* (the staves are defined) */
+/* output an annotation (-A) for a decoration: type 'D',
+ * box from x - wl to x + wr and from y to y + h,
+ * then the decoration name after '|'.
+ * Long decorations (crescendo, 8va...) have their start in x and
+ * their length in val; for the arpeggio (func 2) val is the height. */
+static void anno_deco(struct deco_elt *de, struct deco_def_s *dd,
+			float x, float y)
+{
+	float x1, w, h;
+
+	if (!annotate || de->s->linenum == 0)
+		return;
+	x1 = x - dd->wl;
+	w = dd->wl + dd->wr;
+	h = dd->h;
+	if (de->flags & DE_VAL) {
+		if (dd->func == 2) {		/* arpeggio */
+			h = de->val;
+		} else {			/* long decoration */
+			x1 = x;
+			w = de->val;
+		}
+	}
+	if (mbf[-1] != '\n')
+		*mbf++ = '\n';
+	a2b("%%A D %d %d ", de->s->linenum, de->s->colnum);
+	putxy(x1, y);
+	a2b("%.1f %d |%s\n", w, (int) (h + 0.5), dd->name);
+}
+
 void draw_all_deco(void)
 {
 	struct deco_elt *de;
@@ -1340,7 +1370,7 @@ void draw_all_deco(void)
 	struct SYMBOL *s;
 	int f, staff, l;
 	char *gl, *p;
-	float x, y, y2, ym;
+	float x, y, y2, ym, x_anno, y_anno;
 	float ymid[MAXSTAFF];
 
 	if (!cfmt.dynalign) {
@@ -1433,6 +1463,10 @@ void draw_all_deco(void)
 			}
 		}
 
+		x_anno = x;
+		y_anno = y;
+		anno_begin();
+
 		set_defl(de->defl);
 		if (de->flags & DE_VAL) {
 			if (dd->func != 2
@@ -1499,6 +1533,7 @@ void draw_all_deco(void)
 					l, gl);
 		else
 			a2b("%.*s\n", l, gl);
+		anno_deco(de, dd, x_anno, y_anno);
 	}
 	set_sscale(-1);			/* restore the scale */
 	set_color(0);
