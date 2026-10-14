@@ -105,6 +105,21 @@ void anno_begin(void)
 	a2b("%%A (\n");
 }
 
+/* annotation (-A) for a system element that comes from no ABC symbol
+ * (brace, bracket, line at the start of the system): type 'S',
+ * row and column 0, box from (x, y) with width w and height h,
+ * then its name after '|' */
+static void anno_sys(char *name, float x, float y, float w, float h)
+{
+	if (!annotate)
+		return;
+	if (mbf[-1] != '\n')
+		*mbf++ = '\n';
+	a2b("%%A S 0 0 ");
+	putxy(x, y);
+	a2b("%.1f %d |%s\n", w, (int) (h + 0.5), name);
+}
+
 /* -- up/down shift needed to get k*6 -- */
 static float rnd6(float y)
 {
@@ -829,9 +844,12 @@ static void draw_sysbra(float x, int staff, int flag)
 				* staff_tb[staff].staffscale;
 	yb = staff_tb[end].y + staff_tb[end].botbar
 				* staff_tb[end].staffscale;
+	anno_begin();
 	a2b("%.1f %.1f %.1f %s\n",
 	     yt - yb, x, yt,
 	     (flag & (CLOSE_BRACE | CLOSE_BRACE2)) ? "brace" : "bracket");
+	anno_sys((flag & (CLOSE_BRACE | CLOSE_BRACE2)) ? "brace" : "bracket",
+		 x - 10, yb, 10, yt - yb);
 }
 
 /* -- draw the left side of the staves -- */
@@ -865,9 +883,12 @@ static void draw_lstaff(float x)
 	set_sscale(-1);
 	yb = staff_tb[j].y + staff_tb[j].botbar
 				* staff_tb[j].staffscale;
+	anno_begin();
 	a2b("%.1f %.1f %.1f bar\n",
 	     staff_tb[i].y + staff_tb[i].topbar * staff_tb[i].staffscale - yb,
 	     x, yb);
+	anno_sys("system_start_line", x - 1, yb, 2,
+		 staff_tb[i].y + staff_tb[i].topbar * staff_tb[i].staffscale - yb);
 	for (i = 0; i <= nst; i++) {
 		if (cursys->staff[i].flags & OPEN_BRACE)
 			draw_sysbra(x, i, CLOSE_BRACE);
@@ -890,6 +911,7 @@ static void draw_staff(int staff,
 
 	/* draw the staff */
 	set_sscale(staff);
+	anno_begin();
 	y = staff_tb[staff].y;
 	stafflines = staff_tb[staff].stafflines;
 	l = strlen(stafflines);
@@ -924,6 +946,7 @@ static void draw_staff(int staff,
 		}
 		y += 6;
 	}
+	anno_sys("staff", x1, staff_tb[staff].y, x2 - x1, (l - 1) * 6);
 }
 
 /* -- draw the time signature -- */
