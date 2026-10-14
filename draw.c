@@ -64,6 +64,33 @@ static void anno_out(struct SYMBOL *s, char type)
 	putxy(s->x - s->wl - 2, staff_tb[s->staff].y + s->ymn - 2);
 	if (type != 'b' && type != 'e')		/* if not beam */
 		a2b("%.1f %d", s->wl + s->wr + 4, s->ymx - s->ymn + 4);
+
+	/* what was drawn, after a '|' (SVG: info="...") */
+	switch (s->type) {
+	case NOTEREST: {
+		int i;
+
+		/* head type, flags/beams, dots, number of heads - 1,
+		 * then the pitch (staff position) of each head */
+		a2b(" |%d %d %d %d", s->head, s->nflags, s->dots, s->nhd);
+		for (i = 0; i <= s->nhd; i++)
+			a2b(" %d", s->pits[i]);
+		break;
+	    }
+	case CLEF:
+		a2b(" |%d %d %d", s->u.clef.type, s->u.clef.line,
+				s->u.clef.octave);
+		break;
+	case KEYSIG:
+		a2b(" |%d", s->u.key.sf);
+		break;
+	case BAR:
+		a2b(" |%d %d", s->u.bar.type, s->u.bar.dotted);
+		break;
+	case MREST:
+		a2b(" |%d", s->u.bar.len);
+		break;
+	}
 	a2b("\n");
 }
 

@@ -4452,7 +4452,7 @@ void svg_write(char *buf, int len)
 			if ((char *) q != &buf[1] && q[-2] != '\n')
 				break;
 			if (strncmp((char *) q, "A ", 2) == 0) {	/* annotation */
-				char type;
+				char type, *info;
 				int row , col, h;
 				float x, y, w;
 
@@ -4466,8 +4466,17 @@ void svg_write(char *buf, int len)
 						&row, &col, &x, &y);
 					w = h = 6;
 				}
-				fprintf(fout, "<abc type=\"%c\" row=\"%d\" col=\"%d\" x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%d\"/>\n",
+				fprintf(fout, "<abc type=\"%c\" row=\"%d\" col=\"%d\" x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%d\"",
 					type, row, col, gcur.xoffs + x, gcur.yoffs - y - h, w, h);
+
+				/* what was drawn (after '|', see anno_out) */
+				info = memchr(q, '|', (char *) p - (char *) q);
+				if (info) {
+					info++;
+					fprintf(fout, " info=\"%.*s\"",
+						(int) ((char *) p - info - 1), info);
+				}
+				fprintf(fout, "/>\n");
 				break;
 			}
 			if (strncmp((char *) q, " --- title", 10) == 0) { /* title info */
