@@ -1898,11 +1898,13 @@ static void draw_repbra(struct VOICE_S *p_voice)
 			i = (s2->flags & ABC_F_RBSTOP) ? 3 : 1;
 		else
 			i = (s2->flags & ABC_F_RBSTOP) ? 2 : 0;
+		anno_begin();
 		a2b("(%s)-%.1f %d ",
 			p, cfmt.font_tb[REPEATFONT].size * 0.8 + 1, i);
 		putx(w);
 		putxy(x, y * staff_tb[s1->staff].staffscale);
 		a2b("yns%d repbra\n", s1->staff);
+		anno_named('X', s1, "volta");
 		y_set(s1->staff, 1, x, w, y + 2);
 		if (s->u.bar.repeat_bar)
 			s = s->prev;
@@ -2256,9 +2258,11 @@ void draw_measnb(void)
 			y = y_get(staff, 1, x, w);
 			if (y < staff_tb[staff].topbar + 14)
 				y = staff_tb[staff].topbar + 14;
+			anno_begin();
 			a2b("0 ");
 			puty(y);
 			a2b("y%d M(%d)%s", staff, bar_num, showm);
+			anno_named('X', s, "measure_number");
 			y_set(staff, 1, x, w, y + cfmt.font_tb[MEASUREFONT].size + 2);
 		} else if (bar_num % cfmt.measurenb == 0) {
 			for ( ; ; s = s->ts_next) {
@@ -2290,8 +2294,10 @@ void draw_measnb(void)
 			if (y < staff_tb[staff].topbar + 6)
 				y = staff_tb[staff].topbar + 6;
 			y += 2;
+			anno_begin();
 			putxy(x, y);
 			a2b("y%d M(%d)%s", staff, bar_num, showm);
+			anno_named('X', s, "measure_number");
 			y += cfmt.font_tb[MEASUREFONT].size;
 			y_set(staff, 1, x, w, y);
 			s->ymx = y;
@@ -2341,9 +2347,11 @@ void draw_measnb(void)
 			}
 		}
 		y += 2;
+		anno_begin();
 		a2b(" ");
 		putxy(x, y);
 		a2b("y%d M(%d)%s", staff, bar_num, showm);
+		anno_named('X', s, "measure_number");
 		y += cfmt.font_tb[MEASUREFONT].size;
 		y_set(staff, 1, x, w, y);
 		s->ymx = y;

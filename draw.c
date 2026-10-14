@@ -110,11 +110,19 @@ void anno_begin(void)
  * (the box comes from the drawing) and the kind of text after '|' */
 void anno_text(struct SYMBOL *s, char *name)
 {
+	anno_named('T', s, name);
+}
+
+/* annotation (-A) of type 'type' with the source place of the symbol
+ * (0 0 if none), an empty box (the box comes from the drawing) and a
+ * name after '|' */
+void anno_named(char type, struct SYMBOL *s, char *name)
+{
 	if (!annotate)
 		return;
 	if (mbf[-1] != '\n')
 		*mbf++ = '\n';
-	a2b("%%A T %d %d 0 0 0 0 |%s\n",
+	a2b("%%A %c %d %d 0 0 0 0 |%s\n", type,
 		s ? s->linenum : 0, s ? s->colnum : 0, name);
 }
 
@@ -2416,7 +2424,9 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 	}
 	height *= cfmt.slurheight;
 
+	anno_begin();
 	slur_out(x1, y1, x2, y2, s, height, slur_type & SL_DOTTED, upstaff);
+	anno_named('X', k1, "slur");
 
 	/* have room for other symbols */
 	dx = x2 - x1;
@@ -2794,12 +2804,14 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				xm -= GSTEM_XOFF;
 		}
 		ym = a * xm + b;
+		anno_begin();
 		if ((t->aux & 0x00f0) == 0)	/* if 'which' == number */
 			a2b("(%d)", t->u.tuplet.p_plet);
 		else
 			a2b("(%d:%d)", t->u.tuplet.p_plet, t->u.tuplet.q_plet);
 		putxy(xm, ym);
 		a2b("y%d bnum\n", s1->staff);
+		anno_named('X', s1, "tuplet");
 
 		if (dir == SL_ABOVE) {
 			ym += 8;
@@ -2928,6 +2940,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	ym += dy;
 	y1 = ym + a * (x1 - xm);
 	y2 = ym + a * (x2 - xm);
+	anno_begin();
 	putxy(x2 - x1, y2 - y1);
 	putxy(x1, y1 + 4);
 	a2b("y%d tubr", upstaff);
@@ -3030,6 +3043,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	ym += dy - 10;
 	y1 = ym + a * (x1 - xm);
 	y2 = ym + a * (x2 - xm);
+	anno_begin();
 	putxy(x2 - x1, y2 - y1);
 	putxy(x1, y1 + 4);
 	a2b("y%d tubrl",upstaff);
@@ -3052,6 +3066,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 
 	if ((t->aux & 0x00f0) == 0x10) {	/* if 'which' == none */
 		a2b("\n");
+		anno_named('X', s1, "tuplet");
 		goto done;
 	}
 	yy = .5 * (y1 + y2);
@@ -3061,6 +3076,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		a2b("(%d:%d)", t->u.tuplet.p_plet, t->u.tuplet.q_plet);
 	putxy(xm, yy);
 	a2b("y%d bnumb\n", upstaff);
+	anno_named('X', s1, "tuplet");
 
 	// let some room for the number
 	if (dir == SL_ABOVE)
@@ -3200,9 +3216,11 @@ static void draw_note_ties(struct SYMBOL *k1,
 
 		h = (.04 * (x2 - x1) + 10) * s;
 		h *= cfmt.tieheight;
+		anno_begin();
 		slur_out(x1, staff_tb[staff].y + y,
 			 x2, staff_tb[staff].y + y,
 			 s, h, k1->u.note.notes[m1].ti1 & SL_DOTTED, -1);
+		anno_named('X', k1, "tie");
 	}
 }
 
@@ -3818,9 +3836,11 @@ static void draw_lyric_line(struct VOICE_S *p_voice,
 				/* fall thru */
 			case MREST:
 				if (lflag) {
+					anno_begin();
 					putx(x0 - lastx);
 					putx(lastx + 3);
 					a2b("y wln ");
+					anno_named('X', s, "lyric_extender");
 					lflag = 0;
 					lastx = s->x + s->wr;
 				}
@@ -3848,18 +3868,22 @@ static void draw_lyric_line(struct VOICE_S *p_voice,
 			if (*p == LY_UNDER) {		/* '_' */
 				*p = LY_HYPH;
 			} else if (*p != LY_HYPH) {	/* not '-' */
+				anno_begin();
 				putx(s->x - shift - lastx);
 				putx(lastx);
 				a2b("y hyph ");
+				anno_named('X', s, "lyric_hyphen");
 				hyflag = 0;
 				lastx = s->x + s->wr;
 			}
 		}
 		if (lflag
 		 && *p != LY_UNDER) {		/* not '_' */
+			anno_begin();
 			putx(x0 - lastx + 3);
 			putx(lastx + 3);
 			a2b("y wln ");
+			anno_named('X', s, "lyric_extender");
 			lflag = 0;
 			lastx = s->x + s->wr;
 		}
@@ -3880,18 +3904,22 @@ static void draw_lyric_line(struct VOICE_S *p_voice,
 			p[l] = '\0';
 			hyflag = 1;
 		}
+		anno_begin();
 		putx(x0);
 		a2b("y M ");
 		put_str(p, A_LYRIC);
+		anno_named('X', s, "lyric_syllable");
 		lastx = x0 + w;
 	}
 	if (hyflag) {
 		x0 = realwidth - 10;
 		if (x0 < lastx + 10)
 			x0 = lastx + 10;
+		anno_begin();
 		putx(x0 - lastx);
 		putx(lastx);
 		a2b("y hyph ");
+		anno_named('X', NULL, "lyric_hyphen");
 		if (cfmt.hyphencont)
 			p_voice->hy_st |= (1 << j);
 	}
@@ -3913,9 +3941,11 @@ static void draw_lyric_line(struct VOICE_S *p_voice,
 		}
 	}
 	if (lflag) {
+		anno_begin();
 		putx(x0 - lastx + 3);
 		putx(lastx + 3);
 		a2b("y wln");
+		anno_named('X', NULL, "lyric_extender");
 	}
 	a2b("\n");
 }
