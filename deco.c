@@ -1166,6 +1166,14 @@ void deco_cnv(struct decos *dc,
 						curvoice->ottava = -7;
 					else if (dd->name[2] == 'b')
 						curvoice->ottava = 7;
+
+					/* the ottava shift was already applied
+					 * to this symbol (get_note) before the
+					 * decorations were converted:
+					 * shift it here so that the first note
+					 * under the line is also displaced */
+					for (j = 0; j <= s->nhd; j++)
+						s->pits[j] += curvoice->ottava;
 				} else if (dd->name[3] == ')') {
 					if (dd->name[2] == 'a'
 					 || dd->name[2] == 'b')
